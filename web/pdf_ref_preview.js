@@ -14,21 +14,42 @@ async function togglePreview() {
   app._previewing = false;
 
   async function mouseoverHandler(event) {
-    if (event.target.className != "internalLink" || app._previewing) return;
+    //console.log(event.target.className);
+    const linkTypes = [
+      "linkAnnotation"
+    ];
+    
+    const target = event.target;
+    if (!linkTypes.includes(target.className) || app._previewing) return;
 
-    const hash = event.target.hash;
-    const parent = event.target.parentElement;
-
+    // Place preview at the bottom of the annotation box
+    //box.bottom # 20910
+    //box.height # 25277
+    //box.left # 0
+    //box.right # 1225.5999755859375
+    //box.top # -4367
+    //box.width # 1225.5999755859375
+    //box.x # 0
+    //box.y # -4367
+    //const x = target.style.left;
+    //const y = target.style.top;
+    //const w = target.style.width;
+    const h = target.style.height.replace("%", "") / 100.0;
+    //const top = box.top + h * box.height;
+    const top = event.clientY + 4;
+    
+    const parent = target.parentElement;
     const preview = document.createElement("canvas");
     const previewStyle = preview.style;
     previewStyle.border = "1px solid black";
     previewStyle.direction = "ltr";
     previewStyle.position = "fixed";
-    previewStyle.zIndex = "2";
-    previewStyle.top = `${event.clientY + 4}px`;
+    previewStyle.zIndex = "99"; // on top of everything else (incl. link outline)
+    previewStyle.top = `${top}px`;
     previewStyle.boxShadow = "5px 5px 5px black, -5px 5px 5px black";
 
-    const namedDest = decodeURIComponent(hash.substring(1));
+    const encodedRef = target.firstChild.href.split("#")[1]
+    const namedDest = decodeURIComponent(encodedRef);
     const explicitDest =
       namedDest in destinations
         ? destinations[namedDest]
@@ -41,6 +62,7 @@ async function togglePreview() {
       const width = tempViewport.width * 1.2 * app.pdfViewer.currentScale;
       const leftOffset =
         event.clientX > halfWidth ? (2 * width) / 3 : width / 3;
+      
       previewStyle.height = `${height}px`;
       previewStyle.width = `${width}px`;
       previewStyle.left = `${event.clientX - leftOffset - 4}px`;
