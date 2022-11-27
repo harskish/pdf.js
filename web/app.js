@@ -76,6 +76,7 @@ import { PDFViewer } from "./pdf_viewer.js";
 import { SecondaryToolbar } from "./secondary_toolbar.js";
 import { Toolbar } from "./toolbar.js";
 import { ViewHistory } from "./view_history.js";
+import { togglePreview } from "./pdf_ref_preview.js";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -2939,6 +2940,10 @@ function webViewerKeyDown(evt) {
       case 75: // 'k'
       case 80: // 'p'
         turnPage = -1;
+        break;
+      case 81: // 'q'
+        togglePreview();
+        handled = true;
         break;
       case 27: // esc key
         if (PDFViewerApplication.secondaryToolbar.isOpen) {
