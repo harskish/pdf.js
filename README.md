@@ -22,7 +22,7 @@ For more complete instructions, please refer to the upstream [documentation](htt
 ## Running server for local development
 - `gulp server`
 - Navigate to http://localhost:8888/web/viewer.html
-- Specify file with: http://localhost:8888/web/viewer.html?file=../filename.pdf (relative to ./web)
+- Specify file with: http://localhost:8888/web/viewer.html?file=../rebasin.pdf (relative to ./web)
 
 It is also possible to view all test PDF files on the right side by opening: http://localhost:8888/test/pdfs/?frame
 

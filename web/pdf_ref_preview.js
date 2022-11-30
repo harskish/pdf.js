@@ -2,41 +2,42 @@ async function togglePreview() {
   const app = window.PDFViewerApplication;
   const anchor = document.getElementById("viewer");
   if ("_previewHandler" in app) {
+    console.log("Removing link preview handler")
     anchor.removeEventListener("mouseover", app._previewHandler);
     delete app._previewHandler;
     delete app._previewing;
     return;
   }
 
+  console.log("Adding link preview handler")
   const box = anchor.getBoundingClientRect();
   const halfWidth = (box.left + box.right) / 2;
   const destinations = await app.pdfDocument.getDestinations();
   app._previewing = false;
 
   async function mouseoverHandler(event) {
-    //console.log(event.target.className);
+    if (event.target.className != '') {
+      console.log(`Entering ${event.target.className}`);
+    }
+
     const linkTypes = [
-      "linkAnnotation"
+      "linkAnnotation",
+      "annotationLayer",
     ];
     
+    
     const target = event.target;
-    if (!linkTypes.includes(target.className) || app._previewing) return;
+    //if (!linkTypes.includes(target.className) || app._previewing) return;
+    if (!linkTypes.includes(target.className)) return;
+    
+    if (app._previewing) {
+      console.log('Already previewing');
+      return;
+    }
 
     // Place preview at the bottom of the annotation box
-    //box.bottom # 20910
-    //box.height # 25277
-    //box.left # 0
-    //box.right # 1225.5999755859375
-    //box.top # -4367
-    //box.width # 1225.5999755859375
-    //box.x # 0
-    //box.y # -4367
-    //const x = target.style.left;
-    //const y = target.style.top;
-    //const w = target.style.width;
-    const h = target.style.height.replace("%", "") / 100.0;
-    //const top = box.top + h * box.height;
-    const top = event.clientY + 4;
+    var rect = target.getBoundingClientRect();
+    const top = rect.top + rect.height + 4;
     
     const parent = target.parentElement;
     const preview = document.createElement("canvas");
@@ -101,11 +102,18 @@ async function togglePreview() {
     anchor.prepend(preview);
     app._previewing = true;
 
-    parent.addEventListener("mouseleave", function (event) {
+    // TODO: mouseout?'
+    // TODO: why parent?
+    //parent.addEventListener("mouseleave", function (event) {
+    target.addEventListener("mouseleave", function (event) {
+      console.log(`Leaving ${event.target.className}`);
       preview.remove();
       app._previewing = false;
-    });
+    }, { once: true }); // call once, then remove
   }
+
+  // mouseover: when hovering any child element
+  // mouseenter: only when entering document root
   anchor.addEventListener("mouseover", mouseoverHandler);
   app._previewHandler = mouseoverHandler;
 }
