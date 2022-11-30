@@ -1,6 +1,7 @@
 async function togglePreview() {
   const app = window.PDFViewerApplication;
   const anchor = document.getElementById("viewer");
+
   if ("_previewHandler" in app) {
     console.log("Removing link preview handler")
     anchor.removeEventListener("mouseover", app._previewHandler);
@@ -16,30 +17,17 @@ async function togglePreview() {
   app._previewing = false;
 
   async function mouseoverHandler(event) {
-    if (event.target.className != '') {
-      console.log(`Entering ${event.target.className}`);
-    }
-
-    const linkTypes = [
-      "linkAnnotation",
-      "annotationLayer",
-    ];
-    
-    
     const target = event.target;
-    //if (!linkTypes.includes(target.className) || app._previewing) return;
-    if (!linkTypes.includes(target.className)) return;
-    
-    if (app._previewing) {
-      console.log('Already previewing');
-      return;
-    }
+    //console.log(`Entering ${target.className}`);
+
+    // Entering hyperlink?
+    if (target.tagName != 'A' || app._previewing) return;
 
     // Place preview at the bottom of the annotation box
     var rect = target.getBoundingClientRect();
     const top = rect.top + rect.height + 4;
     
-    const parent = target.parentElement;
+    //const parent = target.parentElement;
     const preview = document.createElement("canvas");
     const previewStyle = preview.style;
     previewStyle.border = "1px solid black";
@@ -49,7 +37,7 @@ async function togglePreview() {
     previewStyle.top = `${top}px`;
     previewStyle.boxShadow = "5px 5px 5px black, -5px 5px 5px black";
 
-    const encodedRef = target.firstChild.href.split("#")[1]
+    const encodedRef = target.href.split("#")[1]
     const namedDest = decodeURIComponent(encodedRef);
     const explicitDest =
       namedDest in destinations
@@ -102,18 +90,12 @@ async function togglePreview() {
     anchor.prepend(preview);
     app._previewing = true;
 
-    // TODO: mouseout?'
-    // TODO: why parent?
-    //parent.addEventListener("mouseleave", function (event) {
     target.addEventListener("mouseleave", function (event) {
-      console.log(`Leaving ${event.target.className}`);
       preview.remove();
       app._previewing = false;
     }, { once: true }); // call once, then remove
   }
 
-  // mouseover: when hovering any child element
-  // mouseenter: only when entering document root
   anchor.addEventListener("mouseover", mouseoverHandler);
   app._previewHandler = mouseoverHandler;
 }
