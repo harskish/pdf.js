@@ -1,6 +1,7 @@
 async function togglePreview() {
   const app = window.PDFViewerApplication;
   const anchor = document.getElementById("viewer");
+  const layout = await app.pdfDocument.getPageLayout();
 
   if ("_previewHandler" in app) {
     console.log("Removing link preview handler")
@@ -29,6 +30,18 @@ async function togglePreview() {
     
     //const parent = target.parentElement;
     const preview = document.createElement("canvas");
+    preview.setAttribute("role", "presentation"); // TODO: needed?
+    
+    // Keep preview hidden to prevent flicker
+    preview.hidden = true;
+    let isPreviewHidden = true;
+    const showPreview = function () {
+      if (isPreviewHidden) {
+        preview.hidden = false;
+        isPreviewHidden = false;
+      }
+    };
+
     const previewStyle = preview.style;
     previewStyle.border = "1px solid black";
     previewStyle.direction = "ltr";
@@ -45,6 +58,7 @@ async function togglePreview() {
         : JSON.parse(namedDest);
     const pageNumber = app.pdfLinkService._cachedPageNumber(explicitDest[0]);
 
+    // Returns pageProxy since real page might not be rendered yet
     app.pdfDocument.getPage(pageNumber).then(function (page) {
       const tempViewport = page.getViewport({ scale: 1.0 });
       const height = tempViewport.height * 1.2 * app.pdfViewer.currentScale;
@@ -56,19 +70,42 @@ async function togglePreview() {
       previewStyle.width = `${width}px`;
       previewStyle.left = `${event.clientX - leftOffset - 4}px`;
 
-      let offsetY;
+      let offsetX = 0;
+      let offsetY = 0;
       switch (explicitDest[1].name) {
-        case "XYZ":
+        case "XYZ":  // specifies coords, zoom
+          offsetX = explicitDest[2];
           offsetY = explicitDest[3];
           break;
-        case "FitH":
+        case "FitH":  // fill width at Y
+          offsetY = explicitDest[2];
+          break;
+        case "FitV":  // fill height at X
+          offsetX = explicitDest[2];
+          break;
         case "FitBH":
-        case "FitV":
         case "FitBV":
           offsetY = explicitDest[2];
           break;
         default:
-          console.log(`Oops, link ${explicitDest[1].name} is not supported.`);
+          console.log(`Unsupported link type "${explicitDest[1].name}"`);
+          console.log(explicitDest);
+      }
+
+      // All elements under target point
+      // TODO: check pdf_viewer.scrollPageIntoView(), ui_utils.scrollIntoView()
+      if (!app.pdfViewer.isPageCached(pageNumber)) {
+        console.log(`Page ${pageNumber} is not cached`);
+      } else {
+        const pageView = app.pdfViewer._pages[pageNumber - 1];
+        const { div, id } = pageView;
+        const rect = div.firstChild.getBoundingClientRect();
+        let pageOffsetY = rect.y; //div.offsetTop + div.clientTop;
+        let pageOffsetX = rect.x; //div.offsetLeft + div.clientLeft;
+  
+        //let test = tempViewport.convertToViewportPoint(offsetX, offsetY);
+        const targets = document.elementsFromPoint(pageOffsetX + offsetX, pageOffsetY + offsetY);
+        console.log(`Element at href target: ${targets[0]}`);
       }
 
       const scale = 4;
@@ -81,10 +118,14 @@ async function togglePreview() {
       preview.width = viewport.width;
 
       const renderContext = {
-        canvasContext: preview.getContext("2d"),
+        canvasContext: preview.getContext("2d", { alpha: false }),
         viewport: viewport,
       };
-      page.render(renderContext);
+      
+      const renderTask = page.render(renderContext);
+      renderTask.promise.then(() => {
+        showPreview();
+      });
     });
 
     anchor.prepend(preview);
