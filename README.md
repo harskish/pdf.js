@@ -5,7 +5,7 @@ This is a fork of [PDF.js](https://mozilla.github.io/pdf.js/) with inline link p
 ## Getting the Code and Dependencies
 - Install Node.js 15.14.0 (v88, newest version that is supported by [certain dependencies](https://github.com/node-gfx/node-canvas-prebuilt/releases))
     - Install [nvm](https://github.com/nvm-sh/nvm#installing-and-updating), then run `nvm install 15.14.0`
-- Clone repository: `git clone --recursive -b extension https://github.com/harskish/pdf.js.git`
+- Clone repository: `git clone --recursive https://github.com/harskish/pdf.js.git`
 - Install glup: `npm install -g gulp-cli`
 - Install dependencies: `npm install --legacy-peer-deps`
 
